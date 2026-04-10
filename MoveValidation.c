@@ -329,3 +329,51 @@ int IsCheckmate(Board* pBoard, char color)
     
     return 1; /* no legal moves: checkmate (or stalemate) - figure out stalemate */
 }
+
+void ApplyMove(Board* pBoard, int fRow, int fCol, int tRow, int tCol)
+{
+    Piece mover = pBoard->grid[fRow][fCol];
+
+    /* en passant capture */
+    if (mover.type == 'P' && IsEnPassant(pBoard, fRow, fCol, tRow, tCol, mover.color)) {
+        MovePiece(pBoard, fRow, fCol, tRow, tCol);
+
+        if (mover.color == 'w') {
+            pBoard->grid[tRow - 1][tCol].color = ' ';
+            pBoard->grid[tRow - 1][tCol].type = ' ';
+        }
+        else {
+            pBoard->grid[tRow + 1][tCol].color = ' ';
+            pBoard->grid[tRow + 1][tCol].type = ' ';
+        }
+
+        ClearEnPassant();
+        return;
+    }
+
+    /* mark en passant chance after a 2-square pawn move */
+    if (mover.type == 'P' && abs(tRow - fRow) == 2) {
+        SetEnPassant(tRow, tCol);
+    }
+    else {
+        ClearEnPassant();
+    }
+
+    /* anteater special capture */
+    if (mover.type == 'A' && pBoard->grid[tRow][tCol].type == 'P' &&
+        pBoard->grid[tRow][tCol].color != mover.color) {
+        AnteaterCapture(pBoard, fRow, fCol, tRow, tCol, mover.color);
+        return;
+    }
+
+    /* normal move */
+    MovePiece(pBoard, fRow, fCol, tRow, tCol);
+
+    /* simple pawn promotion */
+    if (mover.type == 'P') {
+        if ((mover.color == 'w' && tRow == ROWS - 1) ||
+            (mover.color == 'b' && tRow == 0)) {
+            pBoard->grid[tRow][tCol].type = 'Q';
+        }
+    }
+}

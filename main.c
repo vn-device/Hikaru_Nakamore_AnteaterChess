@@ -94,7 +94,9 @@ int main()
                     if ((fRow >= 0 && fRow < ROWS) && (tRow >= 0 && tRow < ROWS) && 
                         (fCol >= 0 && fCol < COLS) && (tCol >= 0 && tCol < COLS)) {
                             
-                        MovePiece(&gameBoard, fRow, fCol, tRow, tCol);
+                        if (IsValidMove(&gameBoard, fRow, fCol, tRow, tCol, currentTurn)) {
+                            ApplyMove(&gameBoard, fRow, fCol, tRow, tCol);
+                            
                         if (gameMode == '1') {
                             currentTurn = (currentTurn == 'w') ? 'b' : 'w';
                         }
