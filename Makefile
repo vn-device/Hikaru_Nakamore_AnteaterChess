@@ -6,7 +6,7 @@ CFLAGS = -Wall -ansi -std=c99
 TARGET = chess
 
 # Source and Object files
-SRCS = main.c GameData.c
+SRCS = main.c GameData.c MoveValidation.c MoveList.c
 OBJS = $(SRCS:.c=.o)
 
 all: $(TARGET)

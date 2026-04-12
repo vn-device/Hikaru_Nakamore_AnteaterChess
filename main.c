@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "GameData.h"
-
+#include "MoveValidation.h"
 //=============================================================================
 
 #define SZCODEVERSION "1.0.0"
@@ -94,7 +94,9 @@ int main()
                     if ((fRow >= 0 && fRow < ROWS) && (tRow >= 0 && tRow < ROWS) && 
                         (fCol >= 0 && fCol < COLS) && (tCol >= 0 && tCol < COLS)) {
                             
-                        MovePiece(&gameBoard, fRow, fCol, tRow, tCol);
+                        if (IsValidMove(&gameBoard, fRow, fCol, tRow, tCol, currentTurn)) {
+                            ApplyMove(&gameBoard, fRow, fCol, tRow, tCol);
+                            
                         if (gameMode == '1') {
                             currentTurn = (currentTurn == 'w') ? 'b' : 'w';
                         }
@@ -103,11 +105,11 @@ int main()
                         }
                     }
                     else {
-                        printf("Error: Coordinates out of bounds.\n");
+                        printf("Invalid input. Please try again.\n");
                     }
                 }
                 else {
-                    printf("Invalid input. Please try again.\n");
+                    printf("Error: Coordinates out of bounds.\n");
                 }
             }
             else {

@@ -89,7 +89,7 @@ void MovePiece(Board* pBoard, int oRank, int oFile, int nRank, int nFile)
 
 //=============================================================================
 
-void AnteaterCapture(Board* pBoard, int oRank, int oFile, int nRank, int nFile)
+void AnteaterCapture(Board* pBoard, int oRank, int oFile, int nRank, int nFile, char color)
 {
     int r = oRank;
     int f = oFile;
@@ -112,6 +112,6 @@ void AnteaterCapture(Board* pBoard, int oRank, int oFile, int nRank, int nFile)
     }
 
     /* Place the anteater at the final position eaten */
-    pBoard->grid[nRank][nFile].color = 'w';
+    pBoard->grid[nRank][nFile].color = color;
     pBoard->grid[nRank][nFile].type = 'A';
 }
