@@ -26,14 +26,11 @@ typedef struct {
     Piece grid[ROWS][COLS];
 } Board;
 
-//=============================================================================
+
 
 void InitializeBoard(Board* pBoard);
 void PrintBoard(Board* pBoard);
 void MovePiece(Board* pBoard, int oRank, int oFile, int nRank, int nFile);
-void ClearSquare(Board* pBoard, int row, int col);
-void AnteaterCapture(Board* pBoard, int oRank, int oFile, int nRank, int nFile);
+void AnteaterCapture(Board* pBoard, int oRank, int oFile, int nRank, int nFile, char color);
 
-//=============================================================================
-
-#endif // GAMEDATA_H
+#endif
