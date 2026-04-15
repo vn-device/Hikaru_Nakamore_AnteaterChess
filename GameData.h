@@ -20,10 +20,17 @@
 typedef struct {
     char color;
     char type;
+
+    /* Required for castling validation */
+    unsigned char hasMoved;
 } Piece;
 
 typedef struct {
     Piece grid[ROWS][COLS];
+
+    /* To track the row & col of En Passant vulnerable pawns */
+    int epRow;
+    int epCol;
 } Board;
 
 //=============================================================================

@@ -58,7 +58,7 @@ int main()
 
     /* Prompt the user for side selection */
     while (playerColor != 'w' && playerColor != 'b') {    
-        printf("Please choose your side ('w' for white / 'b' for black): ");
+        printf("\nPlease choose your side ('w' for white / 'b' for black): ");
         
         if (scanf(" %c", &playerColor) != 1) {
             while (getchar() != '\n');
@@ -70,7 +70,7 @@ int main()
 
     /* Setup game variables */
     char moveInput[MAX_INPUT_LENGTH];
-    char aiColor = (playerColor == 'w') ? 'b' : 'w', currentTurn = 'w';
+    char currentTurn = 'w';
     char fromCol, toCol;
     int fromRow, toRow, gameOver = 0;
 
@@ -78,7 +78,16 @@ int main()
     while (!gameOver) {
         PrintBoard(&gameBoard);
 
-        /* PvP if humanTurn is true */
+        /* Pre-turn State Evaluation */
+        if (IsInCheck(&gameBoard, currentTurn)) {
+            if (IsCheckmate(&gameBoard, currentTurn)) {
+                printf("\nCHECKMATE! %s wins the game.\n", (currentTurn == 'w') ? "Black" : "White");
+                gameOver = 1;
+                break;
+            }
+            printf("\nWARNING: %s is in CHECK!\n", (currentTurn == 'w') ? "White" : "Black");
+        }
+
         int humanTurn = (gameMode == '1' || currentTurn == playerColor);
         if (humanTurn) {
             printf("\n%s's turn. Enter your move (e.g., 'E2 E4'): ",  (currentTurn == 'w') ? "White" : "Black");
@@ -97,8 +106,7 @@ int main()
                             
                         if (IsValidMove(&gameBoard, fRow, fCol, tRow, tCol, currentTurn)) {
                             ApplyMove(&gameBoard, fRow, fCol, tRow, tCol);
-
-                            currentTurn = (gameMode != '1') ? aiColor : (currentTurn == 'w' ? 'b' : 'w');
+                            currentTurn = (currentTurn == 'w') ? 'b' : 'w';
                         }
                         else {
                             printf("Illegal move. Try again.\n");
@@ -113,15 +121,20 @@ int main()
                 }
             }
             else {
-                /* Handle EOF (e.g., Ctrl+D on Linux servers) gracefully */
                 printf("\nInput stream closed. Exiting game.\n");
                 gameOver = 1;
             }
         }
         else {
-            /* Placeholder for AI mode */
+            /* * AI Integration Point: 
+             * Must populate fRow, fCol, tRow, tCol using MoveList.c logic 
+             * before calling ApplyMove()
+             */
             printf("Bot Thinking... \n");
-            currentTurn = playerColor;
+            
+            /* Temporary break to prevent infinite loop while AI is unwritten */
+            printf("AI module not implemented. Exiting.\n");
+            gameOver = 1; 
         }
     }
 

@@ -3,16 +3,13 @@
 
 #include "GameData.h"
 
-void SetEnPassant(int row, int col);
-void ClearEnPassant(void);
-
 int IsPathClear(Board* pBoard, int fRow, int fCol, int tRow, int tCol);
 int IsValidPawn(Board* pBoard, int fRow, int fCol, int tRow, int tCol, char color);
 int IsValidRook(Board* pBoard, int fRow, int fCol, int tRow, int tCol);
 int IsValidKnight(int fRow, int fCol, int tRow, int tCol);
 int IsValidBishop(Board* pBoard, int fRow, int fCol, int tRow, int tCol);
 int IsValidQueen(Board* pBoard, int fRow, int fCol, int tRow, int tCol);
-int IsValidKing(int fRow, int fCol, int tRow, int tCol);
+int IsValidKing(Board* pBoard, int fRow, int fCol, int tRow, int tCol, char color);
 int IsValidAnteater(Board* pBoard, int fRow, int fCol, int tRow, int tCol, char color);
 int IsEnPassant(Board* pBoard, int fRow, int fCol, int tRow, int tCol, char color);
 int IsInCheck(Board* pBoard, char color);

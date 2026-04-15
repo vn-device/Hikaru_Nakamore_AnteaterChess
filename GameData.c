@@ -24,6 +24,7 @@ void InitializeBoard(Board* pBoard)
         for (int col = 0; col < COLS; col++) {
             pBoard->grid[row][col].color = ' ';
             pBoard->grid[row][col].type = ' ';
+            pBoard->grid[row][col].hasMoved = 0;
         }
     }
 
