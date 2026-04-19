@@ -27,6 +27,8 @@ void InitializeBoard(Board* pBoard)
             pBoard->grid[row][col].hasMoved = 0;
         }
     }
+    pBoard->epRow = -1;
+    pBoard->epCol = -1;
 
     /* Set up pawns for both colors */
     for (int col = 0; col < COLS; col++) {
