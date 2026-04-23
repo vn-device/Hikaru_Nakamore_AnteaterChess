@@ -6,7 +6,7 @@
 #include "ChessAI.h"
 /* Define M_PI if not available */
 #ifndef M_PI
-//#define M_PI 3.14159265358979323846
+#define M_PI 3.14159265358979323846
 #endif
 
 static char g_gameMode = '1';
@@ -345,7 +345,7 @@ static void HandleBoardClick(int row, int col)
                 if (!g_gameOver) {
                     RunAIMoveIfNeeded();
                 }
-            
+            }
             /* Deselect and clear valid moves */
             g_guiState.selectedRow = -1;
             g_guiState.selectedCol = -1;
@@ -381,6 +381,10 @@ static void HandleBoardClick(int row, int col)
  */
 static gboolean OnBoardClick(GtkWidget *widget, GdkEventButton *event, gpointer data)
 {
+    if (event->button != 1) {
+        return FALSE;
+    }
+
     guint width = gtk_widget_get_allocated_width(widget);
     guint height = gtk_widget_get_allocated_height(widget);
     
@@ -447,7 +451,7 @@ static gboolean OnDrawBoard(GtkWidget *widget, cairo_t *cr, gpointer data)
         double centerY = renderRow * cellHeight + cellHeight / 2;
         double radius = cellWidth / 6;
         
-        cairo_arc(cr, centerX, centerY, radius, 0, 2 * M_PI);
+        cairo_arc(cr, centerX, centerY, radius, 0, 2 * G_PI);
         cairo_fill(cr);
     }
 
@@ -485,9 +489,8 @@ void SetGUIGameContext(FILE* logFile, char startingPlayer, char gameMode, char a
     g_fullTurnCount = 1;
     g_gameMode = gameMode;
     g_aiDifficulty = aiDifficulty;
-    g_humancolor = playerColor;
-    g_gameover = 0;
-    /*initialize human color*/*/
+    g_humanColor = playerColor;
+    g_gameOver = 0;
 
     g_guiState.selectedRow = -1;
     g_guiState.selectedCol = -1;
@@ -569,8 +572,7 @@ void StartGUI(int argc, char *argv[], Board* pBoard)
 
     /* Initialize the application state with the sidebar open */
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(toggleBtn), TRUE);
-    
-    /*The player picks black and the white AI should move first.*/*/
+
     gtk_widget_show_all(window);
     if (g_gameMode == '2' && g_humanColor == 'b') {
         RunAIMoveIfNeeded();
