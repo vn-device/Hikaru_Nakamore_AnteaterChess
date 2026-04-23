@@ -28,6 +28,7 @@
 /* Global file pointer required for asynchronous access within the signal handler */
 static FILE* g_pLogFile = NULL;
 
+
 //=============================================================================
 
 /*
@@ -96,7 +97,29 @@ static void LogMove(FILE* logFile, Board* pBoard, int turnCount, char color, int
     }
 }
 
-/* * Encapsulated procedural loop handling terminal I/O.
+/*
+ * Public function for GUI to process and log a move.
+ * Must be called PRIOR to ApplyMove() to accurately log special moves.
+ * Returns 1 if successful, 0 if move is invalid.
+ */
+int GUI_ProcessMove(Board* pBoard, FILE* logFile, int turnCount, char color, int fRow, int fCol, int tRow, int tCol)
+{
+    /* Validate move before logging */
+    if (!IsValidMove(pBoard, fRow, fCol, tRow, tCol, color)) {
+        return 0;
+    }
+    
+    /* Log the move with all special move detection */
+    LogMove(logFile, pBoard, turnCount, color, fRow, fCol, tRow, tCol);
+    
+    /* Apply the move */
+    ApplyMove(pBoard, fRow, fCol, tRow, tCol);
+    
+    return 1;
+}
+
+/*
+ * Encapsulated procedural loop handling terminal I/O.
  * Isolated to prevent blocking GTK's asynchronous event handling.
  */
 void RunTerminalGame(Board* pBoard, char gameMode, char aiDifficulty, char playerColor)
@@ -186,6 +209,8 @@ void RunTerminalGame(Board* pBoard, char gameMode, char aiDifficulty, char playe
     }
 }
 
+
+
 int main(int argc, char *argv[])
 {
     /* Register the signal handler for terminal interruptions */
@@ -237,6 +262,7 @@ int main(int argc, char *argv[])
         RunTerminalGame(&gameBoard, gameMode, aiDifficulty, playerColor);
     }
     else {
+        SetGUIGameContext(g_pLogFile, 'w', gameMode, aiDifficulty, playerColor);
         StartGUI(argc, argv, &gameBoard);
     }
 
