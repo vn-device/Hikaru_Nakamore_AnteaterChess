@@ -3,12 +3,17 @@
 #include <math.h>
 #include <string.h>
 #include "MoveValidation.h"
-
+#include "ChessAI.h"
 /* Define M_PI if not available */
 #ifndef M_PI
 //#define M_PI 3.14159265358979323846
 #endif
 
+static char g_gameMode = '1';
+static char g_aiDifficulty = '1';
+static char g_humanColor = 'w';
+static int g_gameOver = 0;
+static GtkWidget* g_pBoardArea = NULL;
 /* Global pointer to the active game state for the rendering thread */
 static Board* g_pActiveBoard = NULL;
 
@@ -202,13 +207,105 @@ static void CalculateValidMoves(void)
     }
 }
 
+static void AdvanceTurn(void)
+{
+    if (g_currentPlayer == 'b') {
+        g_fullTurnCount++;
+    }
+    g_currentPlayer = (g_currentPlayer == 'w') ? 'b' : 'w';
+}
+
+static void ShowMessage(const char* text)
+{
+    GtkWidget *toplevel = NULL;
+
+    if (g_pBoardArea != NULL) {
+        GtkWidget *parent = gtk_widget_get_toplevel(g_pBoardArea);
+        if (GTK_IS_WINDOW(parent)) {
+            toplevel = parent;
+        }
+    }
+
+    GtkWidget *dialog = gtk_message_dialog_new(
+        toplevel ? GTK_WINDOW(toplevel) : NULL,
+        GTK_DIALOG_MODAL,
+        GTK_MESSAGE_INFO,
+        GTK_BUTTONS_OK,
+        "%s",
+        text
+    );
+
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+}
+
+static void CheckGUIEndState(void)
+{
+    if (g_pActiveBoard == NULL || g_gameOver) return;
+
+    if (IsInCheck(g_pActiveBoard, g_currentPlayer)) {
+        if (IsCheckmate(g_pActiveBoard, g_currentPlayer)) {
+            char msg[128];
+            snprintf(msg, sizeof(msg), "CHECKMATE! %s wins.",
+                     (g_currentPlayer == 'w') ? "Black" : "White");
+
+            AppendToMoveLog(msg);
+            AppendToMoveLog("\n");
+
+            if (g_pLogFile) {
+                fprintf(g_pLogFile, "{Game Over: %s wins by Checkmate}\n",
+                        (g_currentPlayer == 'w') ? "Black" : "White");
+                fflush(g_pLogFile);
+            }
+
+            g_gameOver = 1;
+            ShowMessage(msg);
+        } else {
+            char msg[128];
+            snprintf(msg, sizeof(msg), "%s is in CHECK!",
+                     (g_currentPlayer == 'w') ? "White" : "Black");
+            AppendToMoveLog(msg);
+            AppendToMoveLog("\n");
+        }
+    }
+}
+
+static void RunAIMoveIfNeeded(void)
+{
+    if (g_gameOver || g_gameMode != '2' || g_currentPlayer == g_humanColor || g_pActiveBoard == NULL) {
+        return;
+    }
+
+    Move aiMove = DetermineAIMove(g_pActiveBoard, g_currentPlayer, g_aiDifficulty);
+
+    if (GUI_ProcessMove(g_pActiveBoard, g_pLogFile, g_fullTurnCount, g_currentPlayer,
+                        aiMove.fRow, aiMove.fCol, aiMove.tRow, aiMove.tCol)) {
+        char moveStr[128];
+        snprintf(moveStr, sizeof(moveStr), "%d. %c%d -> %c%d\n",
+                 g_fullTurnCount,
+                 'a' + aiMove.fCol, aiMove.fRow + 1,
+                 'a' + aiMove.tCol, aiMove.tRow + 1);
+
+        AppendToMoveLog(moveStr);
+        AdvanceTurn();
+        CheckGUIEndState();
+
+        if (g_pBoardArea != NULL) {
+            gtk_widget_queue_draw(g_pBoardArea);
+        }
+    } else {
+        g_gameOver = 1;
+        ShowMessage("AI has no legal move.");
+    }
+}
+
 /*
  * Handles board clicks to select pieces and make moves
  * Uses the existing game logic (IsValidMove, ApplyMove)
  */
 static void HandleBoardClick(int row, int col)
 {
-    if (row < 0 || row >= ROWS || col < 0 || col >= COLS || g_pActiveBoard == NULL) return;
+    if (g_gameOver || row < 0 || row >= ROWS || col < 0 || col >= COLS || g_pActiveBoard == NULL) return;
     
     Piece clickedPiece = g_pActiveBoard->grid[row][col];
     
@@ -242,9 +339,12 @@ static void HandleBoardClick(int row, int col)
                 AppendToMoveLog(moveStr);
                 
                 /* Update game state */
-                if (g_currentPlayer == 'b') g_fullTurnCount++;
-                g_currentPlayer = (g_currentPlayer == 'w') ? 'b' : 'w';
-            }
+                AdvanceTurn();
+                CheckGUIEndState();
+                
+                if (!g_gameOver) {
+                    RunAIMoveIfNeeded();
+                }
             
             /* Deselect and clear valid moves */
             g_guiState.selectedRow = -1;
@@ -378,13 +478,20 @@ static void OnSidebarToggle(GtkToggleButton *toggle_button, gpointer user_data)
  * Public function to set game context for the GUI
  * Called from main.c to sync game state (log file, current player)
  */
-void SetGUIGameContext(FILE* logFile, char startingPlayer)
+void SetGUIGameContext(FILE* logFile, char startingPlayer, char gameMode, char aiDifficulty, char playerColor)
 {
     g_pLogFile = logFile;
     g_currentPlayer = startingPlayer;
     g_fullTurnCount = 1;
+    g_gameMode = gameMode;
+    g_aiDifficulty = aiDifficulty;
+    g_humancolor = playerColor;
+    g_gameover = 0;
+    /*initialize human color*/*/
+
     g_guiState.selectedRow = -1;
     g_guiState.selectedCol = -1;
+    g_guiState.validMoveCount = 0;
 }
 
 void StartGUI(int argc, char *argv[], Board* pBoard)
@@ -445,6 +552,7 @@ void StartGUI(int argc, char *argv[], Board* pBoard)
 
     /* Core rendering area with fixed aspect ratio */
     GtkWidget *drawingArea = gtk_drawing_area_new();
+    g_pBoardArea = drawingArea;
     g_signal_connect(drawingArea, "draw", G_CALLBACK(OnDrawBoard), NULL);
     g_signal_connect(drawingArea, "button-press-event", G_CALLBACK(OnBoardClick), NULL);
     gtk_widget_add_events(drawingArea, GDK_BUTTON_PRESS_MASK);
@@ -461,8 +569,12 @@ void StartGUI(int argc, char *argv[], Board* pBoard)
 
     /* Initialize the application state with the sidebar open */
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(toggleBtn), TRUE);
-
-    gtk_widget_show_all(window);
     
+    /*The player picks black and the white AI should move first.*/*/
+    gtk_widget_show_all(window);
+    if (g_gameMode == '2' && g_humanColor == 'b') {
+        RunAIMoveIfNeeded();
+        gtk_widget_queue_draw(drawingArea);
+    }
     gtk_main();
 }

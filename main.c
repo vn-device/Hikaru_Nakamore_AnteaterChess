@@ -262,12 +262,8 @@ int main(int argc, char *argv[])
         RunTerminalGame(&gameBoard, gameMode, aiDifficulty, playerColor);
     }
     else {
-        
+        SetGUIGameContext(g_pLogFile, 'w', gameMode, aiDifficulty, playerColor);
         StartGUI(argc, argv, &gameBoard);
-        FILE* logFile = fopen("game_log.txt", "a");
-        
-        /* Pass the GUI the log file and starting player */
-        SetGUIGameContext(logFile, 'w');
     }
 
     if (g_pLogFile) fclose(g_pLogFile);

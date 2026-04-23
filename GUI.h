@@ -14,8 +14,7 @@ void StartGUI(int argc, char *argv[], Board* pBoard);
  * Sets up game context for the GUI (log file and initial player)
  * Should be called before or after StartGUI to sync game state
  */
-void SetGUIGameContext(FILE* logFile, char startingPlayer);
-
+void SetGUIGameContext(FILE* logFile, char startingPlayer, char gameMode, char aiDifficulty, char playerColor);
 /*
  * Public function for GUI to process and log a move.
  * Validates move, logs it with special move detection, and applies it.
