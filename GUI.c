@@ -278,14 +278,16 @@ static void RunAIMoveIfNeeded(void)
 
     Move aiMove = DetermineAIMove(g_pActiveBoard, g_currentPlayer, g_aiDifficulty);
 
+    char san[16] = "";
     if (GUI_ProcessMove(g_pActiveBoard, g_pLogFile, g_fullTurnCount, g_currentPlayer,
-                        aiMove.fRow, aiMove.fCol, aiMove.tRow, aiMove.tCol)) {
-        char moveStr[128];
-        snprintf(moveStr, sizeof(moveStr), "%d. %c%d -> %c%d\n",
-                 g_fullTurnCount,
-                 'a' + aiMove.fCol, aiMove.fRow + 1,
-                 'a' + aiMove.tCol, aiMove.tRow + 1);
-
+                        aiMove.fRow, aiMove.fCol, aiMove.tRow, aiMove.tCol,
+                        san, sizeof(san))) {
+        char moveStr[64];
+        if (g_currentPlayer == 'w') {
+            snprintf(moveStr, sizeof(moveStr), "%d. %s ", g_fullTurnCount, san);
+        } else {
+            snprintf(moveStr, sizeof(moveStr), "%s\n", san);
+        }
         AppendToMoveLog(moveStr);
         AdvanceTurn();
         CheckGUIEndState();
@@ -324,24 +326,22 @@ static void HandleBoardClick(int row, int col)
                         row, col, g_currentPlayer)) {
             
             /* Process and log the move using the same logging system as the terminal game */
-            if (GUI_ProcessMove(g_pActiveBoard, g_pLogFile, g_fullTurnCount, g_currentPlayer, 
-                               g_guiState.selectedRow, g_guiState.selectedCol, row, col)) {
-                
-                /* Format move for on-screen display */
-                char moveStr[256];
-                char fromFile = 'a' + g_guiState.selectedCol;
-                int fromRank = g_guiState.selectedRow + 1;
-                char toFile = 'a' + col;
-                int toRank = row + 1;
-                
-                snprintf(moveStr, sizeof(moveStr), "%d. %c%d -> %c%d\n",
-                        g_fullTurnCount, fromFile, fromRank, toFile, toRank);
+            char san[16] = "";
+            if (GUI_ProcessMove(g_pActiveBoard, g_pLogFile, g_fullTurnCount, g_currentPlayer,
+                                g_guiState.selectedRow, g_guiState.selectedCol, row, col,
+                                san, sizeof(san))) {
+
+                char moveStr[64];
+                if (g_currentPlayer == 'w') {
+                    snprintf(moveStr, sizeof(moveStr), "%d. %s ", g_fullTurnCount, san);
+                } else {
+                    snprintf(moveStr, sizeof(moveStr), "%s\n", san);
+                }
                 AppendToMoveLog(moveStr);
-                
-                /* Update game state */
+
                 AdvanceTurn();
                 CheckGUIEndState();
-                
+
                 if (!g_gameOver) {
                     RunAIMoveIfNeeded();
                 }

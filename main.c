@@ -50,7 +50,7 @@ void HandleSigInt(int sig)
  * Static helper to handle file I/O for game logging and terminal UX events. 
  * Must be invoked PRIOR to ApplyMove() to accurately deduce capture states.
  */
-static void LogMove(FILE* logFile, Board* pBoard, int turnCount, char color, int fRow, int fCol, int tRow, int tCol)
+static const char* LogMove(FILE* logFile, Board* pBoard, int turnCount, char color, int fRow, int fCol, int tRow, int tCol)
 {
     Piece mover  = pBoard->grid[fRow][fCol];
     Piece target = pBoard->grid[tRow][tCol];
@@ -126,6 +126,10 @@ static void LogMove(FILE* logFile, Board* pBoard, int turnCount, char color, int
         }
         fflush(logFile);
     }
+    static char returnedSAN[16];
+    strncpy(returnedSAN, san, sizeof(returnedSAN) - 1);
+    returnedSAN[sizeof(returnedSAN) - 1] = '\0';
+    return returnedSAN;
 }
 
 /*
@@ -133,15 +137,20 @@ static void LogMove(FILE* logFile, Board* pBoard, int turnCount, char color, int
  * Must be called PRIOR to ApplyMove() to accurately log special moves.
  * Returns 1 if successful, 0 if move is invalid.
  */
-int GUI_ProcessMove(Board* pBoard, FILE* logFile, int turnCount, char color, int fRow, int fCol, int tRow, int tCol)
+int GUI_ProcessMove(Board* pBoard, FILE* logFile, int turnCount, char color, int fRow, int fCol, int tRow, int tCol, char* outSAN, size_t sanBufSize)
 {
     /* Validate move before logging */
     if (!IsValidMove(pBoard, fRow, fCol, tRow, tCol, color)) {
         return 0;
     }
     
+
     /* Log the move with all special move detection */
-    LogMove(logFile, pBoard, turnCount, color, fRow, fCol, tRow, tCol);
+    const char* san = LogMove(logFile, pBoard, turnCount, color, fRow, fCol, tRow, tCol);
+    if (outSAN && sanBufSize > 0) {
+        strncpy(outSAN, san, sanBufSize - 1);
+        outSAN[sanBufSize - 1] = '\0';
+    }
     
     /* Apply the move */
     ApplyMove(pBoard, fRow, fCol, tRow, tCol);
