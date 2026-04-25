@@ -20,6 +20,6 @@ void SetGUIGameContext(FILE* logFile, char startingPlayer, char gameMode, char a
  * Validates move, logs it with special move detection, and applies it.
  * Returns 1 if successful, 0 if move is invalid.
  */
-int GUI_ProcessMove(Board* pBoard, FILE* logFile, int turnCount, char color, int fRow, int fCol, int tRow, int tCol);
+int GUI_ProcessMove(Board* pBoard, FILE* logFile, int turnCount, char color, int fRow, int fCol, int tRow, int tCol, char* outSAN, size_t sanBufSize);
 
 #endif // GUI_H
