@@ -60,7 +60,9 @@ $(SRC_DIR)/%.o: $(SRC_DIR)/%.c
 tar: clean all
 	mkdir -p Chess_Alpha_src/bin
 	mkdir -p Chess_Alpha_src/doc
+	mkdir -p Chess_Alpha_src/resources
 	cp -r $(SRC_DIR) Makefile Chess_Alpha_src/
+	cp -r resources/* Chess_Alpha_src/resources/
 	cp README* INSTALL* COPYRIGHT* Chess_Alpha_src/
 	cp $(DOC_DIR)/Chess_UserManual.pdf $(DOC_DIR)/Chess_SoftwareSpec.pdf Chess_Alpha_src/doc/
 	cp $(TARGET) Chess_Alpha_src/bin/
