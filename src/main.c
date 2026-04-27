@@ -132,31 +132,6 @@ static const char* LogMove(FILE* logFile, Board* pBoard, int turnCount, char col
     return returnedSAN;
 }
 
-/*
- * Public function for GUI to process and log a move.
- * Must be called PRIOR to ApplyMove() to accurately log special moves.
- * Returns 1 if successful, 0 if move is invalid.
- */
-int GUI_ProcessMove(Board* pBoard, FILE* logFile, int turnCount, char color, int fRow, int fCol, int tRow, int tCol, char* outSAN, size_t sanBufSize)
-{
-    /* Validate move before logging */
-    if (!IsValidMove(pBoard, fRow, fCol, tRow, tCol, color)) {
-        return 0;
-    }
-    
-
-    /* Log the move with all special move detection */
-    const char* san = LogMove(logFile, pBoard, turnCount, color, fRow, fCol, tRow, tCol);
-    if (outSAN && sanBufSize > 0) {
-        strncpy(outSAN, san, sanBufSize - 1);
-        outSAN[sanBufSize - 1] = '\0';
-    }
-    
-    /* Apply the move */
-    ApplyMove(pBoard, fRow, fCol, tRow, tCol);
-    
-    return 1;
-}
 
 /*
  * Encapsulated procedural loop handling terminal I/O.

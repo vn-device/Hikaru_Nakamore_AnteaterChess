@@ -1,6 +1,7 @@
 #include "GUI.h"
 #include <cairo.h>
 #include <string.h>
+#include <stdlib.h>
 #include "MoveValidation.h"
 #include "ChessAI.h"
 
@@ -243,6 +244,93 @@ static void CheckGUIEndState(void)
             AppendToMoveLog("\n");
         }
     }
+}
+
+static const char* LogMove(FILE* logFile, Board* pBoard, int turnCount, char color, int fRow, int fCol, int tRow, int tCol)
+{
+    Piece mover  = pBoard->grid[fRow][fCol];
+    Piece target = pBoard->grid[tRow][tCol];
+
+    const char* colorStr = (color == 'w') ? "White" : "Black";
+    const char* enemyStr = (color == 'w') ? "Black" : "White";
+
+    char san[16] = "";
+    int  pos = 0;
+
+    if (mover.type == 'K' && abs(tCol - fCol) == 2) {
+        strcpy(san, (tCol > fCol) ? "O-O" : "O-O-O");
+    }
+    else {
+        if (mover.type != 'P') {
+            san[pos++] = mover.type;
+        }
+
+        int isCapture = (target.type != ' ' && target.color != color)
+                     || (mover.type == 'P' && IsEnPassant(pBoard, fRow, fCol, tRow, tCol, color))
+                     || (mover.type == 'A' && target.type == 'P' && target.color != color);
+
+        if (mover.type == 'P' && isCapture) {
+            san[pos++] = (char)('a' + fCol);
+        }
+        if (isCapture) {
+            san[pos++] = 'x';
+        }
+
+        san[pos++] = (char)('a' + tCol);
+        san[pos++] = (char)('1' + tRow);
+
+        if (mover.type == 'P' && ((color == 'w' && tRow == ROWS - 1) || (color == 'b' && tRow == 0))) {
+            san[pos++] = '=';
+            san[pos++] = 'Q';
+        }
+
+        san[pos] = '\0';
+
+        if (mover.type == 'A' && target.type == 'P' && target.color != color) {
+            printf("\n>>> %s Anteater devoured enemy ants! <<<\n", colorStr);
+        }
+        else if (mover.type == 'P' && IsEnPassant(pBoard, fRow, fCol, tRow, tCol, color)) {
+            printf("\n>>> %s Pawn captured via En Passant! <<<\n", colorStr);
+        }
+        else {
+            if (target.type != ' ' && target.color != color) {
+                printf("\n>>> %s captured %s's %c! <<<\n", colorStr, enemyStr, target.type);
+            }
+            if (mover.type == 'P' && ((color == 'w' && tRow == ROWS - 1) || (color == 'b' && tRow == 0))) {
+                printf("\n>>> %s Pawn was promoted to a Queen! <<<\n", colorStr);
+            }
+        }
+    }
+
+    if (logFile) {
+        if (color == 'w') {
+            fprintf(logFile, "%d. %s ", turnCount, san);
+        }
+        else {
+            fprintf(logFile, "%s\n", san);
+        }
+        fflush(logFile);
+    }
+
+    static char returnedSAN[16];
+    strncpy(returnedSAN, san, sizeof(returnedSAN) - 1);
+    returnedSAN[sizeof(returnedSAN) - 1] = '\0';
+    return returnedSAN;
+}
+
+int GUI_ProcessMove(Board* pBoard, FILE* logFile, int turnCount, char color,
+                    int fRow, int fCol, int tRow, int tCol, char* outSAN, size_t sanBufSize)
+{
+    if (!IsValidMove(pBoard, fRow, fCol, tRow, tCol, color)) {
+        return 0;
+    }
+    const char* san = LogMove(logFile, pBoard, turnCount, color, fRow, fCol, tRow, tCol);
+    if (outSAN && sanBufSize > 0) {
+        strncpy(outSAN, san, sanBufSize - 1);
+        outSAN[sanBufSize - 1] = '\0';
+    }
+    ApplyMove(pBoard, fRow, fCol, tRow, tCol);
+    return 1;
 }
 
 static void RunAIMoveIfNeeded(void)
