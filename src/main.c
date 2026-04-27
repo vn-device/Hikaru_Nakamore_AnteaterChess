@@ -293,9 +293,9 @@ int main(int argc, char *argv[])
 
     while (getchar() != '\n');
 
-    g_pLogFile = fopen("game_log.txt", "w");
+    g_pLogFile = fopen("bin/game_log.txt", "w");
     if (!g_pLogFile) {
-        printf("CRITICAL WARNING: Unable to open game_log.txt for writing.\n");
+        printf("CRITICAL WARNING: Unable to open bin/game_log.txt for writing.\n");
     }
 
     if (uiMode == '1') {

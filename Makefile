@@ -58,17 +58,30 @@ $(SRC_DIR)/%.o: $(SRC_DIR)/%.c
 # Mandatory tar target for source code package
 # Creates a self-contained directory to match INSTALL instructions
 tar: clean all
-	mkdir -p Chess_Alpha_src/bin
-	mkdir -p Chess_Alpha_src/doc
-	mkdir -p Chess_Alpha_src/resources
-	cp -r $(SRC_DIR) Makefile Chess_Alpha_src/
-	cp -r resources/* Chess_Alpha_src/resources/
-	cp README* INSTALL* COPYRIGHT* Chess_Alpha_src/
-	cp $(DOC_DIR)/Chess_UserManual.pdf $(DOC_DIR)/Chess_SoftwareSpec.pdf Chess_Alpha_src/doc/
-	cp $(TARGET) Chess_Alpha_src/bin/
-	tar -cvzf Chess_Alpha_src.tar.gz Chess_Alpha_src
-	rm -rf Chess_Alpha_src
+	mkdir -p Chess_V1.0_src/bin
+	mkdir -p Chess_V1.0_src/doc
+	mkdir -p Chess_V1.0_src/resources
+	cp -r $(SRC_DIR) Makefile Chess_V1.0_src/
+	cp -r resources/* Chess_V1.0_src/resources/
+	cp README* INSTALL* COPYRIGHT* Chess_V1.0_src/
+	cp $(DOC_DIR)/Chess_UserManual.pdf $(DOC_DIR)/Chess_SoftwareSpec.pdf Chess_V1.0_src/doc/
+	cp $(TARGET) Chess_V1.0_src/bin/
+	tar -cvzf Chess_V1.0_src.tar.gz Chess_V1.0_src
+	rm -rf Chess_V1.0_src
 
+# User package (for end users)
+# Contains only the binary and documentation, no source code
+release: clean all
+	mkdir -p Chess_V1.0/bin
+	mkdir -p Chess_V1.0/doc
+	mkdir -p Chess_V1.0/resources
+	cp README* INSTALL* COPYRIGHT* Chess_V1.0/
+	cp -r resources/* Chess_V1.0/resources/
+	cp $(DOC_DIR)/Chess_UserManual.pdf Chess_V1.0/doc/
+	cp $(TARGET) Chess_V1.0/bin/
+	tar -cvzf Chess_V1.0.tar.gz Chess_V1.0
+	rm -rf Chess_V1.0
+	
 # Mandatory clean target 
 clean:
-	rm -rf $(SRC_DIR)/*.o $(BIN_DIR)/* Chess_Alpha_src.tar.gz
+	rm -rf $(SRC_DIR)/*.o $(BIN_DIR)/* Chess_V1.0_src.tar.gz Chess_V1.0.tar.gz game_log.txt
