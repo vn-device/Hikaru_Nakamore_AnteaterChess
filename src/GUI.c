@@ -1,20 +1,15 @@
 #include "GUI.h"
 #include <cairo.h>
-#include <math.h>
 #include <string.h>
 #include "MoveValidation.h"
 #include "ChessAI.h"
-/* Define M_PI if not available */
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
-static char g_gameMode = '1';
-static char g_aiDifficulty = '1';
-static char g_humanColor = 'w';
+static char g_gameMode = ' ';  
+static char g_aiDifficulty = ' ';
+static char g_humanColor = ' ';
 static int g_gameOver = 0;
+
 static GtkWidget* g_pBoardArea = NULL;
-/* Global pointer to the active game state for the rendering thread */
 static Board* g_pActiveBoard = NULL;
 
 /* Game context for move logging and turn tracking */
@@ -37,11 +32,6 @@ static GUIState g_guiState = {-1, -1, {}, 0};
 
 /* Reference to the move log text view */
 static GtkWidget* g_pLogTextView = NULL;
-
-/* Forward declarations */
-static int GetPieceTypeIndex(char type);
-static int GetColorIndex(char color);
-static GdkPixbuf* LoadPieceImage(char color, char type);
 
 /*
  * Helper function to load a piece image from the resources folder.
@@ -82,34 +72,27 @@ static GdkPixbuf* LoadPieceImage(char color, char type)
     return pixbuf;
 }
 
-/*
- * Helper function to get the index for piece type in the cache array.
- * K=0, Q=1, R=2, B=3, N=4, P=5, A=6
- */
-static int GetPieceTypeIndex(char type)
-{
-    switch (type) {
-        case 'K': return 0;
-        case 'Q': return 1;
-        case 'R': return 2;
-        case 'B': return 3;
-        case 'N': return 4;
-        case 'P': return 5;
-        case 'A': return 6;
-        default: return -1;
-    }
-}
 
 /*
  * Helper function to render a single piece on the board
  */
-static void RenderPiece(cairo_t *cr, Piece piece, int row, int col, 
-                        double cellWidth, double cellHeight)
+static void RenderPiece(cairo_t *cr, Piece piece, int row, int col, double cellWidth, double cellHeight)
 {
     if (piece.type == ' ') return;
     
-    int colorIdx = GetColorIndex(piece.color);
-    int typeIdx = GetPieceTypeIndex(piece.type);
+    int colorIdx = (piece.color == 'w') ? 0 : 1;
+
+    int typeIdx;
+    switch (piece.type) {
+        case 'K': typeIdx = 0; break;
+        case 'Q': typeIdx = 1; break;
+        case 'R': typeIdx = 2; break;
+        case 'B': typeIdx = 3; break;
+        case 'N': typeIdx = 4; break;
+        case 'P': typeIdx = 5; break;
+        case 'A': typeIdx = 6; break;
+        default: return;
+    }
     
     if (typeIdx < 0 || colorIdx < 0) return;
     
@@ -121,7 +104,7 @@ static void RenderPiece(cairo_t *cr, Piece piece, int row, int col,
     GdkPixbuf *originalPixbuf = g_pieceBuf[colorIdx][typeIdx];
     if (originalPixbuf == NULL) return;
     
-    /* Calculate target size (Archbishop is larger due to 512x512 source image) */
+    /* Calculate target size (Anteater is larger due to 512x512 source image) */
     int targetSize = (piece.type == 'A') ? 
         (int)(cellHeight * 0.9) : (int)(cellHeight * 0.8);
     
@@ -151,14 +134,6 @@ static void RenderPiece(cairo_t *cr, Piece piece, int row, int col,
     }
 }
 
-/*
- * Helper function to get the color index for the cache array.
- * 'w' = 0, 'b' = 1
- */
-static int GetColorIndex(char color)
-{
-    return (color == 'w') ? 0 : 1;
-}
 
 /*
  * Helper function to append text to the move log
@@ -186,23 +161,23 @@ static void CalculateValidMoves(void)
     
     if (g_pActiveBoard == NULL || g_guiState.selectedRow < 0) return;
     
-    Piece selectedPiece = g_pActiveBoard->grid[g_guiState.selectedRow][g_guiState.selectedCol];
-    if (selectedPiece.type == ' ') return;
+        Piece selectedPiece = g_pActiveBoard->grid[g_guiState.selectedRow][g_guiState.selectedCol];
+        if (selectedPiece.type == ' ') return;
     
-    /* Check all board squares for valid moves */
-    for (int destRow = 0; destRow < ROWS; destRow++) {
-        for (int destCol = 0; destCol < COLS; destCol++) {
-            /* Skip the selected square itself */
-            if (destRow == g_guiState.selectedRow && destCol == g_guiState.selectedCol) 
-                continue;
-            
-            /* Check if this is a valid move */
-            if (IsValidMove(g_pActiveBoard, g_guiState.selectedRow, g_guiState.selectedCol, 
-                           destRow, destCol, g_currentPlayer)) {
-                g_guiState.validMoves[g_guiState.validMoveCount][0] = destRow;
-                g_guiState.validMoves[g_guiState.validMoveCount][1] = destCol;
-                g_guiState.validMoveCount++;
-            }
+    MoveList list;
+    InitMoveList(&list);
+
+    /* Generate ALL legal moves for the current player */
+    GenerateLegalMoves(g_pActiveBoard, g_currentPlayer, &list);
+
+    /* Filter moves for the selected piece only */
+    for (int i = 0; i < list.count; i++) {
+        if (list.moves[i].fRow == g_guiState.selectedRow &&
+            list.moves[i].fCol == g_guiState.selectedCol) {
+
+            g_guiState.validMoves[g_guiState.validMoveCount][0] = list.moves[i].tRow;
+            g_guiState.validMoves[g_guiState.validMoveCount][1] = list.moves[i].tCol;
+            g_guiState.validMoveCount++;
         }
     }
 }
@@ -303,7 +278,6 @@ static void RunAIMoveIfNeeded(void)
 
 /*
  * Handles board clicks to select pieces and make moves
- * Uses the existing game logic (IsValidMove, ApplyMove)
  */
 static void HandleBoardClick(int row, int col)
 {
@@ -431,6 +405,16 @@ static gboolean OnDrawBoard(GtkWidget *widget, cairo_t *cr, gpointer data)
         }
     }
 
+
+    /* Draw all pieces on the board */
+    if (g_pActiveBoard != NULL) {
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                RenderPiece(cr, g_pActiveBoard->grid[row][col], row, col, cellWidth, cellHeight);
+            }
+        }
+    }
+
     /* Highlight selected piece */
     if (g_guiState.selectedRow >= 0) {
         int renderRow = ROWS - 1 - g_guiState.selectedRow;
@@ -440,8 +424,8 @@ static gboolean OnDrawBoard(GtkWidget *widget, cairo_t *cr, gpointer data)
         cairo_fill(cr);
     }
 
-    /* Highlight valid move destinations */
-    cairo_set_source_rgba(cr, 0.0, 1.0, 0.0, 0.5);  /* Green semi-transparent */
+        /* Highlight valid move destinations */
+    cairo_set_source_rgba(cr, 1.0, 0.0, 0.0, 1.0);  /* Red */
     for (int i = 0; i < g_guiState.validMoveCount; i++) {
         int moveRow = g_guiState.validMoves[i][0];
         int moveCol = g_guiState.validMoves[i][1];
@@ -453,15 +437,6 @@ static gboolean OnDrawBoard(GtkWidget *widget, cairo_t *cr, gpointer data)
         
         cairo_arc(cr, centerX, centerY, radius, 0, 2 * G_PI);
         cairo_fill(cr);
-    }
-
-    /* Draw all pieces on the board */
-    if (g_pActiveBoard != NULL) {
-        for (int row = 0; row < ROWS; row++) {
-            for (int col = 0; col < COLS; col++) {
-                RenderPiece(cr, g_pActiveBoard->grid[row][col], row, col, cellWidth, cellHeight);
-            }
-        }
     }
 
     return FALSE;
